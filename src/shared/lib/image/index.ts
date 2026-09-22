@@ -1,3 +1,5 @@
 export * from './color/luma'
+export * from './formats/detect'
+export * from './formats/file-name'
 export * from './geometry'
 export * from './image'
