@@ -1,4 +1,6 @@
+export * from './color/flatten'
 export * from './color/luma'
+export * from './color/normalize-gray'
 export * from './formats/detect'
 export * from './formats/file-name'
 export * from './formats/gb7'
