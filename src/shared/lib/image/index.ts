@@ -1,5 +1,6 @@
 export * from './color/luma'
 export * from './formats/detect'
 export * from './formats/file-name'
+export * from './formats/gb7'
 export * from './geometry'
 export * from './image'
