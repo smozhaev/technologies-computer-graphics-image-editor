@@ -1,0 +1,8 @@
+.root {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-top: 1px solid var(--mantine-color-dark-4);
+  background: var(--mantine-color-dark-6);
+}

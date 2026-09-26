@@ -1,0 +1,18 @@
+.root {
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--mantine-color-dark-4);
+  background: var(--mantine-color-dark-6);
+}
+
+.brand {
+  letter-spacing: 0.02em;
+  margin-right: 6px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.brandAccent {
+  font-weight: 400;
+  /* same yellow as the active tool button */
+  color: var(--mantine-color-yellow-filled);
+}

@@ -1,0 +1,5 @@
+.root {
+  padding: 6px 4px;
+  border-right: 1px solid var(--mantine-color-dark-4);
+  background: var(--mantine-color-dark-6);
+}
