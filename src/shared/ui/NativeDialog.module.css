@@ -1,0 +1,41 @@
+.dialog {
+  padding: 0;
+  border: 1px solid var(--mantine-color-dark-4);
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-dark-7);
+  color: var(--mantine-color-text);
+  max-width: min(90vw, 40rem);
+  min-width: 20rem;
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-md);
+}
+
+/* floating tool window: preview stays visible and undimmed */
+.floating {
+  margin: 0;
+  position: fixed;
+  top: 72px;
+  right: 270px;
+  left: auto;
+  bottom: auto;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
+}
+
+.floating::backdrop {
+  background: transparent;
+}
+
+.handle {
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
