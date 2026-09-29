@@ -1,16 +1,29 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import {
+  ALL_CHANNELS_ON,
+  channelsForLayout,
+  type ChannelId,
+  type ChannelLayout,
+  type ChannelMask,
+} from '@/shared/lib/image'
 import type { ViewState, Viewport } from '@/shared/lib/image'
+import type { Sample } from '@/shared/lib/image'
 import type { ImageDocument } from '@/shared/lib/image'
 
 export type DialogKind = null | 'save'
+
+/** Eyedropper reading of the current version. */
+export type PixelSample = Sample
 
 export interface EditorState {
   doc: ImageDocument | null
   view: ViewState
   /** Measured canvas area; null until the viewport mounts. */
   viewport: Viewport | null
-  activeTool: 'pointer'
+  channels: ChannelMask
+  picked: PixelSample | null
+  activeTool: 'pointer' | 'eyedropper'
   dialog: DialogKind
   busy: boolean
 }
@@ -21,6 +34,8 @@ export const initialEditorState: EditorState = {
   doc: null,
   view: initialView,
   viewport: null,
+  channels: ALL_CHANNELS_ON,
+  picked: null,
   activeTool: 'pointer',
   dialog: null,
   busy: false,
@@ -49,9 +64,15 @@ export function useEditor<S>(selector: (s: EditorState) => S): S {
   return useEditorStore(selector)
 }
 
-/** New document: shown at 100 %, scrolled to the top-left corner. */
+/** New document: shown at 100 %, scrolled to the top-left corner, channels reset. */
 export function setDocument(s: EditorState, doc: ImageDocument): EditorState {
-  return { ...s, doc, view: initialView }
+  return {
+    ...s,
+    doc,
+    view: initialView,
+    channels: ALL_CHANNELS_ON,
+    picked: null,
+  }
 }
 
 export function closeDocument(s: EditorState): EditorState {
@@ -60,7 +81,33 @@ export function closeDocument(s: EditorState): EditorState {
     doc: null,
     dialog: null,
     view: initialView,
+    channels: ALL_CHANNELS_ON,
+    picked: null,
   }
+}
+
+function currentLayout(s: EditorState): ChannelLayout | null {
+  const v = s.doc ? s.doc.versions[s.doc.currentIndex] : undefined
+  return v ? v.layout : null
+}
+
+/** Toggle one channel; the last visible channel of the image cannot be switched off. */
+export function toggleChannel(s: EditorState, id: ChannelId): EditorState {
+  const next = { ...s.channels, [id]: !s.channels[id] }
+  const layout = currentLayout(s)
+  if (layout && !channelsForLayout(layout).some((c) => next[c])) return s
+  return { ...s, channels: next }
+}
+
+/** Show only one channel (click on a channel row). */
+export function soloChannel(s: EditorState, id: ChannelId): EditorState {
+  const channels = { gray: false, r: false, g: false, b: false, a: false, [id]: true }
+  return { ...s, channels }
+}
+
+/** Composite row: every colour channel on; alpha keeps its state. */
+export function showAllColourChannels(s: EditorState): EditorState {
+  return { ...s, channels: { ...s.channels, gray: true, r: true, g: true, b: true } }
 }
 
 export function setDialog(s: EditorState, dialog: DialogKind): EditorState {

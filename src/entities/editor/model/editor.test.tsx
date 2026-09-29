@@ -9,6 +9,7 @@ import {
   resetEditorStore,
   setDialog,
   setDocument,
+  toggleChannel,
   useEditor,
 } from './editor'
 
@@ -54,6 +55,27 @@ describe('transitions', () => {
     const closed = closeDocument(saving)
     expect(closed.doc).toBeNull()
     expect(closed.dialog).toBeNull()
+  })
+})
+
+describe('channels state', () => {
+  it('toggle and reset on new document', () => {
+    const off = toggleChannel(initialEditorState, 'g')
+    expect(off.channels.g).toBe(false)
+    expect(initialEditorState.channels.g).toBe(true)
+    const doc = createDocument(
+      {
+        format: 'png',
+        fileName: 'a',
+        bitDepth: 24,
+        depthLabel: '',
+        sourceWidth: 1,
+        sourceHeight: 1,
+        gb7HasMask: false,
+      },
+      { image: createRaster(1, 1), layout: 'rgb', levelMax: 255 },
+    )
+    expect(setDocument(off, doc).channels.g).toBe(true)
   })
 })
 
