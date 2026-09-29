@@ -1,3 +1,4 @@
+import { isMaskIdentity, maskPixel, type ChannelMask } from './channels'
 import { imageToScreen, type ViewState, type Viewport } from './geometry'
 import { createRaster, type ImageDocument, type RasterImage } from './image'
 import {
@@ -49,12 +50,20 @@ function axisTable(
   return { taps: INTERPOLATORS[method].taps(imageLen, coords), inside, parity }
 }
 
+/** Inputs of the cheap per-pixel stages applied after resampling. */
+export interface PointStages {
+  channels?: ChannelMask
+}
+
+export type RenderStages = PointStages
+
 /** Viewport-sized sample of the image before point stages; reusable while only point stages change. */
 export interface ViewSample {
   /** Straight-alpha RGBA of sampled image colour (zero outside the image). */
   raster: RasterImage
   /** Per device pixel: 0 outside the image, 1 light checker cell, 2 dark checker cell. */
   cell: Uint8Array
+  layout: ImageDocument['versions'][number]['layout']
 }
 
 /** Expensive stage: interpolate the visible part of the current version into a viewport-sized buffer. */
@@ -66,6 +75,7 @@ export function sampleView(doc: ImageDocument, view: ViewState, vp: Viewport): V
     return {
       raster: { width: 0, height: 0, data: new Uint8ClampedArray(0) },
       cell: new Uint8Array(0),
+      layout: version.layout,
     }
   }
   const img = version.image
@@ -115,18 +125,20 @@ export function sampleView(doc: ImageDocument, view: ViewState, vp: Viewport): V
       d[o + 3] = Math.round(pa)
     }
   }
-  return { raster: out, cell }
+  return { raster: out, cell, layout: version.layout }
 }
 
-/** Cheap stage: checkerboard composite, background outside. */
-export function composeView(sample: ViewSample): RasterImage {
-  const { raster, cell } = sample
+/** Cheap stage: channel mask, checkerboard composite, background outside. */
+export function composeView(sample: ViewSample, stages: PointStages = {}): RasterImage {
+  const { raster, cell, layout } = sample
   const { width: W, height: H } = raster
   if (W === 0 || H === 0) return { width: 0, height: 0, data: new Uint8ClampedArray(0) }
   const out = createRaster(W, H)
   const d = out.data
   const s = raster.data
   const { r: br, g: bg, b: bb } = VIEW_BACKGROUND
+  const mask = stages.channels && !isMaskIdentity(stages.channels, layout) ? stages.channels : null
+  const px = [0, 0, 0, 0]
   for (let c = 0, o = 0; c < cell.length; c++, o += 4) {
     d[o + 3] = 255
     const kc = cell[c]!
@@ -136,10 +148,17 @@ export function composeView(sample: ViewSample): RasterImage {
       d[o + 2] = bb
       continue
     }
-    const r = s[o]!
-    const g = s[o + 1]!
-    const b = s[o + 2]!
-    const a = s[o + 3]!
+    let r = s[o]!
+    let g = s[o + 1]!
+    let b = s[o + 2]!
+    let a = s[o + 3]!
+    if (mask) {
+      maskPixel(r, g, b, a, layout, mask, px)
+      r = px[0]!
+      g = px[1]!
+      b = px[2]!
+      a = px[3]!
+    }
     if (a === 255) {
       d[o] = r
       d[o + 1] = g
@@ -166,6 +185,11 @@ export function composeView(sample: ViewSample): RasterImage {
  * Raster of exactly backingSize(vp): visible part of the current version through the full pipeline.
  * Equivalent to composeView(sampleView(...)); the viewport caches the sample between point-stage changes.
  */
-export function renderView(doc: ImageDocument, view: ViewState, vp: Viewport): RasterImage {
-  return composeView(sampleView(doc, view, vp))
+export function renderView(
+  doc: ImageDocument,
+  view: ViewState,
+  vp: Viewport,
+  stages: RenderStages = {},
+): RasterImage {
+  return composeView(sampleView(doc, view, vp), stages)
 }

@@ -1,3 +1,4 @@
+export * from './channels'
 export * from './color/flatten'
 export * from './color/lab'
 export * from './color/luma'
