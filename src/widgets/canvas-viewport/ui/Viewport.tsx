@@ -3,7 +3,8 @@ import { IconPhotoPlus } from '@tabler/icons-react'
 import classes from './Viewport.module.css'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { CanvasView } from '@/shared/ui'
-import { renderView, VIEW_BACKGROUND } from '@/shared/lib/image'
+import { composeView, sampleView, VIEW_BACKGROUND } from '@/shared/lib/image'
+import { pickAt } from '@/features/pick-color'
 import { useRequestOpen } from '@/features/open-file'
 import { setViewportSize, setViewScroll } from '@/entities/editor'
 import { useEditor } from '@/entities/editor'
@@ -15,6 +16,8 @@ export function Viewport() {
   const doc = useEditor((s) => s.doc)
   const view = useEditor((s) => s.view)
   const vp = useEditor((s) => s.viewport)
+  const channels = useEditor((s) => s.channels)
+  const tool = useEditor((s) => s.activeTool)
   const containerRef = useRef<HTMLDivElement>(null)
   const requestOpen = useRequestOpen()
 
@@ -59,11 +62,17 @@ export function Viewport() {
     if (el.scrollTop !== view.scrollY) el.scrollTop = view.scrollY
   }, [view, image])
 
-  const raster = useMemo(
-    () => (doc && vp && vp.cssWidth > 0 && vp.cssHeight > 0 ? renderView(doc, view, vp) : null),
+  // expensive resample: only when the image, view or viewport changes
+  const sample = useMemo(
+    () => (doc && vp && vp.cssWidth > 0 && vp.cssHeight > 0 ? sampleView(doc, view, vp) : null),
     // memoised by the current image reference, not the whole document
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [image, view, vp],
+  )
+  // cheap point stage: channel toggles reuse the sample
+  const raster = useMemo(
+    () => (sample ? composeView(sample, { channels }) : null),
+    [sample, channels],
   )
 
   return (
@@ -72,11 +81,17 @@ export function Viewport() {
       role="region"
       aria-label="Холст"
       onScroll={(e) => setViewScroll(e.currentTarget.scrollLeft, e.currentTarget.scrollTop)}
+      onClick={(e) => {
+        if (tool !== 'eyedropper' || !vp || e.button !== 0) return
+        const rect = e.currentTarget.getBoundingClientRect()
+        pickAt(e.clientX - rect.left, e.clientY - rect.top, vp)
+      }}
       style={{
         position: 'absolute',
         inset: 0,
         overflow: 'auto',
         background: bgCss,
+        cursor: tool === 'eyedropper' && image ? 'crosshair' : 'default',
       }}
     >
       {!image && (

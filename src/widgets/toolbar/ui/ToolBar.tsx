@@ -1,5 +1,5 @@
 import { ActionIcon, Stack, Tooltip } from '@mantine/core'
-import { IconPointer } from '@tabler/icons-react'
+import { IconColorPicker, IconPointer } from '@tabler/icons-react'
 import type { ComponentType } from 'react'
 import { editorStore, useEditor, type EditorState } from '@/entities/editor'
 import classes from './ToolBar.module.css'
@@ -10,9 +10,12 @@ interface Tool {
   icon: ComponentType<{ size?: number }>
 }
 
-const TOOLS: Tool[] = [{ id: 'pointer', label: 'Указатель', icon: IconPointer }]
+const TOOLS: Tool[] = [
+  { id: 'pointer', label: 'Указатель (V)', icon: IconPointer },
+  { id: 'eyedropper', label: 'Пипетка (I)', icon: IconColorPicker },
+]
 
-/** Tools panel; lab1 has the pointer only. */
+/** Tools: pointer and eyedropper. */
 export function ToolBar() {
   const active = useEditor((s) => s.activeTool)
   return (

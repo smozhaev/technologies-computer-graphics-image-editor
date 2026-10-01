@@ -10,6 +10,11 @@ function openDialog(dialog: DialogKind) {
 
 const openSave = () => openDialog('save')
 
+function setTool(tool: 'pointer' | 'eyedropper') {
+  if (editorStore.getState().dialog !== null) return
+  editorStore.setState((s) => (s.activeTool === tool ? s : { ...s, activeTool: tool }))
+}
+
 /** App hotkeys; all ignored while a dialog is open. */
 export function useEditorHotkeys(): void {
   const requestOpen = useRequestOpen()
@@ -21,6 +26,8 @@ export function useEditorHotkeys(): void {
       },
     ],
     ['mod+S', openSave],
+    ['I', () => setTool('eyedropper')],
+    ['V', () => setTool('pointer')],
     ['mod+shift+S', openSave],
   ])
 }
