@@ -1,0 +1,16 @@
+/* left half: opaque colour, right half: colour with its alpha over a checkerboard */
+.swatch {
+  display: flex;
+  width: 56px;
+  height: 32px;
+  flex: none;
+  border: 1px solid var(--mantine-color-gray-5);
+  border-radius: var(--mantine-radius-xs);
+  outline: 1px solid var(--mantine-color-dark-9);
+  background: repeating-conic-gradient(#ccc 0 25%, #fff 0 50%) 0 0 / 8px 8px;
+  overflow: hidden;
+}
+
+.half {
+  flex: 1;
+}

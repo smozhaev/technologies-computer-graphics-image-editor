@@ -24,8 +24,8 @@ describe('shell', () => {
   it('renders menus, tool, panels, empty status', () => {
     renderWithProviders(<EditorPage />)
     for (const name of ['Файл']) expect(screen.getByRole('button', { name })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Указатель' })).toBeInTheDocument()
-    expect(screen.getAllByText('Нет изображения')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Указатель (V)' })).toBeInTheDocument()
+    expect(screen.getAllByText('Нет изображения')).toHaveLength(2)
     expect(status()).toHaveTextContent('Откройте изображение (Ctrl+O)')
   })
 
