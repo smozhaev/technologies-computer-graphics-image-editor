@@ -1,4 +1,5 @@
 import { useHotkeys } from '@mantine/hooks'
+import { undoVersion } from '@/features/undo-version'
 import { editorStore, setDialog, type DialogKind } from '@/entities/editor'
 import { useRequestOpen } from '@/features/open-file'
 
@@ -26,6 +27,13 @@ export function useEditorHotkeys(): void {
       },
     ],
     ['mod+S', openSave],
+    ['mod+L', () => openDialog('levels')],
+    [
+      'mod+Z',
+      () => {
+        if (editorStore.getState().dialog === null) undoVersion()
+      },
+    ],
     ['I', () => setTool('eyedropper')],
     ['V', () => setTool('pointer')],
     ['mod+shift+S', openSave],

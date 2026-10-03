@@ -17,6 +17,7 @@ export function Viewport() {
   const view = useEditor((s) => s.view)
   const vp = useEditor((s) => s.viewport)
   const channels = useEditor((s) => s.channels)
+  const levels = useEditor((s) => s.levelsPreview)
   const tool = useEditor((s) => s.activeTool)
   const containerRef = useRef<HTMLDivElement>(null)
   const requestOpen = useRequestOpen()
@@ -69,10 +70,10 @@ export function Viewport() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [image, view, vp],
   )
-  // cheap point stage: channel toggles reuse the sample
+  // cheap point stages: channel toggles and levels preview reuse the sample
   const raster = useMemo(
-    () => (sample ? composeView(sample, { channels }) : null),
-    [sample, channels],
+    () => (sample ? composeView(sample, { channels, levels }) : null),
+    [sample, channels, levels],
   )
 
   return (

@@ -23,7 +23,8 @@ const pick = (file: File) => fireEvent.change(input(), { target: { files: [file]
 describe('shell', () => {
   it('renders menus, tool, panels, empty status', () => {
     renderWithProviders(<EditorPage />)
-    for (const name of ['Файл']) expect(screen.getByRole('button', { name })).toBeInTheDocument()
+    for (const name of ['Файл', 'Изображение'])
+      expect(screen.getByRole('button', { name })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Указатель (V)' })).toBeInTheDocument()
     expect(screen.getAllByText('Нет изображения')).toHaveLength(2)
     expect(status()).toHaveTextContent('Откройте изображение (Ctrl+O)')
@@ -35,6 +36,10 @@ describe('shell', () => {
     await user.click(screen.getByRole('button', { name: 'Файл' }))
     expect(screen.getByRole('menuitem', { name: /Открыть/ })).toBeEnabled()
     expect(screen.getByRole('menuitem', { name: /Сохранить как/ })).toBeDisabled()
+    await user.keyboard('{Escape}')
+    await user.click(screen.getByRole('button', { name: 'Изображение' }))
+    expect(screen.getByRole('menuitem', { name: /Уровни/ })).toBeDisabled()
+    expect(screen.getByRole('menuitem', { name: /Отменить/ })).toBeDisabled()
   })
 
   it('opens GB7 via input, updates status and info; save/close work', async () => {
