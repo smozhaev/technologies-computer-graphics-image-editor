@@ -1,3 +1,4 @@
+import { LevelsDialog } from '@/features/adjust-levels'
 import {
   DropOverlay,
   openAndNotify,
@@ -36,6 +37,7 @@ export function EditorPage() {
     <OpenFileProvider>
       <EditorShell />
       <SaveDialog />
+      <LevelsDialog />
     </OpenFileProvider>
   )
 }

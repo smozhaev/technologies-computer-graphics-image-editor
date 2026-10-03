@@ -143,3 +143,24 @@ describe('saveAs', () => {
     await expect(saveAs({ format: 'png', name: 'x' })).rejects.toBeInstanceOf(SaveError)
   })
 })
+
+describe('levels apply and undo', () => {
+  it('pushes a version, clears preview; undo steps back', async () => {
+    const { applyLevelsToDocument } = await import('@/features/adjust-levels')
+    const { undoVersion } = await import('@/features/undo-version')
+    const { buildLevelsLuts, identitySettings } = await import('@/shared/lib/image')
+    editorStore.setState((s) => ({ ...s, doc: docWith(), dialog: 'levels' }))
+    const s = identitySettings(255)
+    s.r = { black: 0, gamma: 1, white: 20 }
+    applyLevelsToDocument(buildLevelsLuts(s, 255))
+    const st = editorStore.getState()
+    expect(st.doc?.versions).toHaveLength(2)
+    expect(st.doc?.versions[1]?.label).toBe('Уровни')
+    expect(st.doc?.versions[1]?.image.data[0]).toBe(128) // 10/20·255 = 127.5 → 128
+    expect(st.dialog).toBeNull()
+    undoVersion()
+    expect(editorStore.getState().doc?.currentIndex).toBe(0)
+    undoVersion()
+    expect(editorStore.getState().doc?.currentIndex).toBe(0)
+  })
+})

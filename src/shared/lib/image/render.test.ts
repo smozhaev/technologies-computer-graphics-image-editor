@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ALL_CHANNELS_ON } from './channels'
 import { imageToScreen } from './geometry'
 import { createRaster, type ImageDocument, type RasterImage } from './image'
+import { buildLevelsLuts, identitySettings } from './levels'
 import { CHECKER_DARK, CHECKER_LIGHT, renderView, VIEW_BACKGROUND } from './render'
 
 function doc(...images: RasterImage[]): ImageDocument {
@@ -117,6 +118,16 @@ describe('renderView', () => {
     expect(at(renderView(doc(semi), view(), v, { channels: onlyA }), 0, 0)).toEqual([
       77, 77, 77, 255,
     ])
+  })
+  it('levels stage applies LUTs before the channel mask', () => {
+    const v = { cssWidth: 1, cssHeight: 1, dpr: 1 }
+    const s = identitySettings(255)
+    s.master = { black: 0, gamma: 1, white: 128 }
+    const out = renderView(doc(solid(1, 1, [64, 10, 200, 255])), view(), v, {
+      levels: buildLevelsLuts(s, 255),
+      channels: { ...ALL_CHANNELS_ON, g: false },
+    })
+    expect(at(out, 0, 0)).toEqual([128, 0, 255, 255])
   })
   it('zoom 2 duplicates pixels; zoom 0.5 halves', () => {
     const img = createRaster(2, 1)

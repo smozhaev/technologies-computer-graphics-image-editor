@@ -7,6 +7,7 @@ import {
   type InterpolatorId,
   type TapTable,
 } from './interpolation'
+import type { LevelsLuts } from './levels'
 
 /** CSS px of one checkerboard cell, anchored at the image's top-left corner. */
 export const CHECKER_CELL = 8
@@ -52,6 +53,7 @@ function axisTable(
 
 /** Inputs of the cheap per-pixel stages applied after resampling. */
 export interface PointStages {
+  levels?: LevelsLuts | null
   channels?: ChannelMask
 }
 
@@ -128,7 +130,7 @@ export function sampleView(doc: ImageDocument, view: ViewState, vp: Viewport): V
   return { raster: out, cell, layout: version.layout }
 }
 
-/** Cheap stage: channel mask, checkerboard composite, background outside. */
+/** Cheap stage: levels LUT, channel mask, checkerboard composite, background outside. */
 export function composeView(sample: ViewSample, stages: PointStages = {}): RasterImage {
   const { raster, cell, layout } = sample
   const { width: W, height: H } = raster
@@ -139,6 +141,7 @@ export function composeView(sample: ViewSample, stages: PointStages = {}): Raste
   const { r: br, g: bg, b: bb } = VIEW_BACKGROUND
   const mask = stages.channels && !isMaskIdentity(stages.channels, layout) ? stages.channels : null
   const px = [0, 0, 0, 0]
+  const lut = stages.levels ?? null
   for (let c = 0, o = 0; c < cell.length; c++, o += 4) {
     d[o + 3] = 255
     const kc = cell[c]!
@@ -152,6 +155,12 @@ export function composeView(sample: ViewSample, stages: PointStages = {}): Raste
     let g = s[o + 1]!
     let b = s[o + 2]!
     let a = s[o + 3]!
+    if (lut) {
+      r = lut.r[r]!
+      g = lut.g[g]!
+      b = lut.b[b]!
+      a = lut.a[a]!
+    }
     if (mask) {
       maskPixel(r, g, b, a, layout, mask, px)
       r = px[0]!
