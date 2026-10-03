@@ -8,10 +8,11 @@ import {
   type ChannelMask,
 } from '@/shared/lib/image'
 import type { ViewState, Viewport } from '@/shared/lib/image'
+import type { LevelsLuts } from '@/shared/lib/image'
 import type { Sample } from '@/shared/lib/image'
 import type { ImageDocument } from '@/shared/lib/image'
 
-export type DialogKind = null | 'save'
+export type DialogKind = null | 'save' | 'levels'
 
 /** Eyedropper reading of the current version. */
 export type PixelSample = Sample
@@ -23,6 +24,8 @@ export interface EditorState {
   viewport: Viewport | null
   channels: ChannelMask
   picked: PixelSample | null
+  /** Live preview tables while the Levels dialog is open. */
+  levelsPreview: LevelsLuts | null
   activeTool: 'pointer' | 'eyedropper'
   dialog: DialogKind
   busy: boolean
@@ -36,6 +39,7 @@ export const initialEditorState: EditorState = {
   viewport: null,
   channels: ALL_CHANNELS_ON,
   picked: null,
+  levelsPreview: null,
   activeTool: 'pointer',
   dialog: null,
   busy: false,
