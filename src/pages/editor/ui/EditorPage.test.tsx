@@ -39,6 +39,7 @@ describe('shell', () => {
     await user.keyboard('{Escape}')
     await user.click(screen.getByRole('button', { name: 'Изображение' }))
     expect(screen.getByRole('menuitem', { name: /Уровни/ })).toBeDisabled()
+    expect(screen.getByRole('menuitem', { name: /Размер изображения/ })).toBeDisabled()
     expect(screen.getByRole('menuitem', { name: /Отменить/ })).toBeDisabled()
   })
 
