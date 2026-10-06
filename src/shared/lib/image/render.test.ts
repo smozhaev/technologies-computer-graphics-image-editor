@@ -129,13 +129,15 @@ describe('renderView', () => {
     })
     expect(at(out, 0, 0)).toEqual([128, 0, 255, 255])
   })
-  it('zoom 2 duplicates pixels; zoom 0.5 halves', () => {
+  it('zoom 2 nearest duplicates; bilinear blends; zoom 0.5 averages', () => {
     const img = createRaster(2, 1)
     img.data.set([0, 0, 0, 255, 200, 0, 0, 255])
     const v = { cssWidth: 4, cssHeight: 2, dpr: 1 }
     const z2 = { zoom: 2, scrollX: 0, scrollY: 0 }
-    const near = renderView(doc(img), z2, v)
+    const near = renderView(doc(img), z2, v, { interpolation: 'nearest' })
     expect([0, 1, 2, 3].map((x) => at(near, x, 0)[0])).toEqual([0, 0, 200, 200])
+    const bil = renderView(doc(img), z2, v, { interpolation: 'bilinear' })
+    expect([0, 1, 2, 3].map((x) => at(bil, x, 0)[0])).toEqual([0, 50, 150, 200])
     const half = renderView(
       doc(createRaster(4, 4)),
       { zoom: 0.5, scrollX: 0, scrollY: 0 },

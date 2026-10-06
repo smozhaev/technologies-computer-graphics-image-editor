@@ -64,6 +64,13 @@ export function MenuBar() {
           >
             Уровни…
           </Menu.Item>
+          <Menu.Item
+            disabled={!hasDoc}
+            onClick={() => editorStore.setState((s) => setDialog(s, 'resize'))}
+            rightSection={hint(shortcut('I', false, true))}
+          >
+            Размер изображения…
+          </Menu.Item>
         </Menu.Dropdown>
       </Menu>
     </Group>

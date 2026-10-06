@@ -8,11 +8,13 @@ import {
   type ChannelMask,
 } from '@/shared/lib/image'
 import type { ViewState, Viewport } from '@/shared/lib/image'
+import { DEFAULT_INTERPOLATOR, type InterpolatorId } from '@/shared/lib/image'
+import { fitZoom } from '@/shared/lib/image'
 import type { LevelsLuts } from '@/shared/lib/image'
 import type { Sample } from '@/shared/lib/image'
 import type { ImageDocument } from '@/shared/lib/image'
 
-export type DialogKind = null | 'save' | 'levels'
+export type DialogKind = null | 'save' | 'levels' | 'resize'
 
 /** Eyedropper reading of the current version. */
 export type PixelSample = Sample
@@ -22,6 +24,8 @@ export interface EditorState {
   view: ViewState
   /** Measured canvas area; null until the viewport mounts. */
   viewport: Viewport | null
+  /** Method used to draw the image at zoom ≠ 100 %. */
+  interpolation: InterpolatorId
   channels: ChannelMask
   picked: PixelSample | null
   /** Live preview tables while the Levels dialog is open. */
@@ -37,6 +41,7 @@ export const initialEditorState: EditorState = {
   doc: null,
   view: initialView,
   viewport: null,
+  interpolation: DEFAULT_INTERPOLATOR,
   channels: ALL_CHANNELS_ON,
   picked: null,
   levelsPreview: null,
@@ -68,12 +73,14 @@ export function useEditor<S>(selector: (s: EditorState) => S): S {
   return useEditorStore(selector)
 }
 
-/** New document: shown at 100 %, scrolled to the top-left corner, channels reset. */
+/** New document: fitted into the viewport (≥ 50 px margins, 12–300 %), channels reset. */
 export function setDocument(s: EditorState, doc: ImageDocument): EditorState {
+  const img = doc.versions[doc.currentIndex]?.image
+  const zoom = s.viewport && img ? fitZoom(img, s.viewport) : 1
   return {
     ...s,
     doc,
-    view: initialView,
+    view: { zoom, scrollX: 0, scrollY: 0 },
     channels: ALL_CHANNELS_ON,
     picked: null,
   }

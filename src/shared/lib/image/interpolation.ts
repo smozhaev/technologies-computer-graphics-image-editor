@@ -7,7 +7,7 @@ export interface TapTable {
   weight: Float32Array
 }
 
-export type InterpolatorId = 'nearest'
+export type InterpolatorId = 'nearest' | 'bilinear'
 
 export interface Interpolator {
   id: InterpolatorId
@@ -33,8 +33,30 @@ const nearest: Interpolator = {
   },
 }
 
-export const INTERPOLATORS: Readonly<Record<InterpolatorId, Interpolator>> = { nearest }
-export const DEFAULT_INTERPOLATOR: InterpolatorId = 'nearest'
+const bilinear: Interpolator = {
+  id: 'bilinear',
+  name: 'Билинейная',
+  description:
+    'Взвешенное среднее четырёх соседних пикселей. Плавные переходы без «лесенки», хорошо для фотографий; немного размывает мелкие детали.',
+  taps(srcLen, coords) {
+    const n = coords.length
+    const index = new Int32Array(n * 2)
+    const weight = new Float32Array(n * 2)
+    for (let i = 0; i < n; i++) {
+      const c = coords[i]!
+      const f = Math.floor(c)
+      const t = c - f
+      index[i * 2] = clampIndex(f, srcLen)
+      index[i * 2 + 1] = clampIndex(f + 1, srcLen)
+      weight[i * 2] = 1 - t
+      weight[i * 2 + 1] = t
+    }
+    return { taps: 2, index, weight }
+  },
+}
+
+export const INTERPOLATORS: Readonly<Record<InterpolatorId, Interpolator>> = { nearest, bilinear }
+export const DEFAULT_INTERPOLATOR: InterpolatorId = 'bilinear'
 
 /** Source pixel-centre coordinate for each destination index: (d + 0.5)/scale − 0.5 + offset. */
 export function centreCoords(dstLen: number, scale: number, offset = 0): Float64Array {

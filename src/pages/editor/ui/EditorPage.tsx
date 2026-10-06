@@ -5,6 +5,7 @@ import {
   OpenFileProvider,
   useWindowFileDrop,
 } from '@/features/open-file'
+import { ResizeDialog } from '@/features/resize-image'
 import { SaveDialog } from '@/features/save-file'
 import { Viewport } from '@/widgets/canvas-viewport'
 import { EditorLayout } from '@/widgets/editor-layout'
@@ -38,6 +39,7 @@ export function EditorPage() {
       <EditorShell />
       <SaveDialog />
       <LevelsDialog />
+      <ResizeDialog />
     </OpenFileProvider>
   )
 }

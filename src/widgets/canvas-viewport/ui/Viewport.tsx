@@ -1,10 +1,11 @@
 import { Center, Stack, Text, UnstyledButton } from '@mantine/core'
 import { IconPhotoPlus } from '@tabler/icons-react'
 import classes from './Viewport.module.css'
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { CanvasView } from '@/shared/ui'
 import { composeView, sampleView, VIEW_BACKGROUND } from '@/shared/lib/image'
 import { pickAt } from '@/features/pick-color'
+import { zoomBy } from '@/features/zoom-view'
 import { useRequestOpen } from '@/features/open-file'
 import { setViewportSize, setViewScroll } from '@/entities/editor'
 import { useEditor } from '@/entities/editor'
@@ -18,6 +19,7 @@ export function Viewport() {
   const vp = useEditor((s) => s.viewport)
   const channels = useEditor((s) => s.channels)
   const levels = useEditor((s) => s.levelsPreview)
+  const interpolation = useEditor((s) => s.interpolation)
   const tool = useEditor((s) => s.activeTool)
   const containerRef = useRef<HTMLDivElement>(null)
   const requestOpen = useRequestOpen()
@@ -55,6 +57,22 @@ export function Viewport() {
 
   const image = doc ? doc.versions[doc.currentIndex]?.image : undefined
 
+  // Ctrl/⌘ + wheel (and trackpad pinch, which arrives as ctrl+wheel) zooms around the cursor;
+  // a native non-passive listener is needed to stop the browser's page zoom
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      const rect = el.getBoundingClientRect()
+      const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY
+      zoomBy(Math.exp(-delta * 0.0025), { x: e.clientX - rect.left, y: e.clientY - rect.top })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
+
   // store → DOM scroll (zoom changes, new document); DOM → store goes through onScroll
   useLayoutEffect(() => {
     const el = containerRef.current
@@ -63,12 +81,15 @@ export function Viewport() {
     if (el.scrollTop !== view.scrollY) el.scrollTop = view.scrollY
   }, [view, image])
 
-  // expensive resample: only when the image, view or viewport changes
+  // expensive resample: only when the image, view, viewport or interpolation changes
   const sample = useMemo(
-    () => (doc && vp && vp.cssWidth > 0 && vp.cssHeight > 0 ? sampleView(doc, view, vp) : null),
+    () =>
+      doc && vp && vp.cssWidth > 0 && vp.cssHeight > 0
+        ? sampleView(doc, view, vp, { interpolation })
+        : null,
     // memoised by the current image reference, not the whole document
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [image, view, vp],
+    [image, view, vp, interpolation],
   )
   // cheap point stages: channel toggles and levels preview reuse the sample
   const raster = useMemo(
