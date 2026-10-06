@@ -78,7 +78,7 @@ export function channelThumbnail(
   channel: ChannelId,
   maxW: number,
   maxH: number,
-  method: InterpolatorId = 'nearest',
+  method: InterpolatorId = 'bilinear',
 ): RasterImage {
   const scale = Math.min(maxW / image.width, maxH / image.height, 1)
   const w = Math.max(1, Math.round(image.width * scale))
