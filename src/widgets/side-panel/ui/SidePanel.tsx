@@ -2,6 +2,7 @@ import { Divider, Stack, Text } from '@mantine/core'
 import { useEditor } from '@/entities/editor'
 import { ChannelsPanel } from '@/features/toggle-channels'
 import { PickedInfo } from '@/features/pick-color'
+import { ZoomControl } from '@/features/zoom-view'
 import classes from './SidePanel.module.css'
 import { formatLabel } from '@/entities/document'
 
@@ -29,6 +30,7 @@ export function SidePanel() {
           <>
             <Text size="xs">Файл: {doc.source.fileName}</Text>
             <Text size="xs">Формат: {formatLabel(doc.source.format)}</Text>
+            <ZoomControl />
             <PickedInfo />
           </>
         ) : (

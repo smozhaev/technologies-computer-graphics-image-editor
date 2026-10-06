@@ -51,13 +51,19 @@ function axisTable(
   return { taps: INTERPOLATORS[method].taps(imageLen, coords), inside, parity }
 }
 
+/** Inputs of the expensive resample stage. */
+export interface ResampleStages {
+  /** View interpolation (lab4); exact copy is used at 100 % to stay pixel-sharp. */
+  interpolation?: InterpolatorId
+}
+
 /** Inputs of the cheap per-pixel stages applied after resampling. */
 export interface PointStages {
   levels?: LevelsLuts | null
   channels?: ChannelMask
 }
 
-export type RenderStages = PointStages
+export type RenderStages = ResampleStages & PointStages
 
 /** Viewport-sized sample of the image before point stages; reusable while only point stages change. */
 export interface ViewSample {
@@ -69,7 +75,12 @@ export interface ViewSample {
 }
 
 /** Expensive stage: interpolate the visible part of the current version into a viewport-sized buffer. */
-export function sampleView(doc: ImageDocument, view: ViewState, vp: Viewport): ViewSample {
+export function sampleView(
+  doc: ImageDocument,
+  view: ViewState,
+  vp: Viewport,
+  stages: ResampleStages = {},
+): ViewSample {
   const { width: W, height: H } = backingSize(vp)
   const version = doc.versions[doc.currentIndex]
   if (!version) throw new Error('Нет текущей версии изображения')
@@ -82,7 +93,8 @@ export function sampleView(doc: ImageDocument, view: ViewState, vp: Viewport): V
   }
   const img = version.image
   const origin = imageToScreen({ x: 0, y: 0 }, view, vp, img)
-  const method: InterpolatorId = DEFAULT_INTERPOLATOR
+  const method: InterpolatorId =
+    view.zoom === 1 ? 'nearest' : (stages.interpolation ?? DEFAULT_INTERPOLATOR)
   const xs = axisTable(W, vp.dpr, origin.x, view.zoom, img.width, method)
   const ys = axisTable(H, vp.dpr, origin.y, view.zoom, img.height, method)
   const xt = xs.taps
@@ -200,5 +212,5 @@ export function renderView(
   vp: Viewport,
   stages: RenderStages = {},
 ): RasterImage {
-  return composeView(sampleView(doc, view, vp), stages)
+  return composeView(sampleView(doc, view, vp, stages), stages)
 }
