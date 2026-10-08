@@ -1,17 +1,19 @@
 import type { RasterImage } from '@/shared/lib/image'
 import {
   handleRequest,
+  type ConvolveParams,
   type JobOp,
   type ResizeParams,
   type WorkerRequest,
   type WorkerResponse,
 } from './protocol'
 
-/** Independent job queues; a newer job supersedes only a job of the same lane. */
-export type JobLane = 'resize'
+/** Independent job queues: a newer preview never supersedes an apply or a resize. */
+export type JobLane = 'preview' | 'apply' | 'resize'
 
 /** Runs image jobs; resolves null when a newer job in the same lane superseded this one. */
 export interface JobRunner {
+  convolve(source: RasterImage, params: ConvolveParams, lane?: JobLane): Promise<RasterImage | null>
   resize(source: RasterImage, params: ResizeParams): Promise<RasterImage | null>
 }
 
@@ -46,7 +48,7 @@ interface LaneState {
 
 /**
  * Shared logic: source sent once per image (as a transferred copy); per lane one job runs and one waits,
- * so intermediate requests are dropped before they are computed.
+ * so intermediate preview requests are dropped before they are computed.
  */
 export function createRunner(
   port: Port,
@@ -57,6 +59,8 @@ export function createRunner(
   let jobSeq = 0
   const inflight = new Map<number, { job: Job; lane: JobLane }>()
   const lanes: Record<JobLane, LaneState> = {
+    preview: { running: false, pending: null },
+    apply: { running: false, pending: null },
     resize: { running: false, pending: null },
   }
 
@@ -120,6 +124,9 @@ export function createRunner(
   return {
     sentSources: () => sent,
     computed: () => computed,
+    convolve(source, params, lane = 'preview') {
+      return enqueue(lane, source, { kind: 'convolve', params })
+    },
     resize(source, params) {
       return enqueue('resize', source, { kind: 'resize', params })
     },

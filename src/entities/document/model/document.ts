@@ -17,7 +17,7 @@ export interface VersionLimits {
   maxBytes: number
 }
 
-/** Result of every apply operation (levels, resize). */
+/** Result of every apply operation (levels, resize, filter). */
 export interface VersionPayload {
   image: RasterImage
   layout: ChannelLayout

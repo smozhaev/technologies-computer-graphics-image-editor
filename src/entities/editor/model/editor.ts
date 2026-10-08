@@ -12,9 +12,9 @@ import { DEFAULT_INTERPOLATOR, type InterpolatorId } from '@/shared/lib/image'
 import { fitZoom } from '@/shared/lib/image'
 import type { LevelsLuts } from '@/shared/lib/image'
 import type { Sample } from '@/shared/lib/image'
-import type { ImageDocument } from '@/shared/lib/image'
+import type { ImageDocument, RasterImage } from '@/shared/lib/image'
 
-export type DialogKind = null | 'save' | 'levels' | 'resize'
+export type DialogKind = null | 'save' | 'levels' | 'resize' | 'filter'
 
 /** Eyedropper reading of the current version. */
 export type PixelSample = Sample
@@ -30,6 +30,8 @@ export interface EditorState {
   picked: PixelSample | null
   /** Live preview tables while the Levels dialog is open. */
   levelsPreview: LevelsLuts | null
+  /** Full-resolution filtered raster while the filter dialog previews. */
+  filterPreview: RasterImage | null
   activeTool: 'pointer' | 'eyedropper'
   dialog: DialogKind
   busy: boolean
@@ -45,6 +47,7 @@ export const initialEditorState: EditorState = {
   channels: ALL_CHANNELS_ON,
   picked: null,
   levelsPreview: null,
+  filterPreview: null,
   activeTool: 'pointer',
   dialog: null,
   busy: false,

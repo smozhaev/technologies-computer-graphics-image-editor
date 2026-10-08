@@ -1,4 +1,19 @@
-import { resizeImage, type InterpolatorId, type RasterImage } from '@/shared/lib/image'
+import {
+  convolve3x3,
+  resizeImage,
+  type FilterChannels,
+  type InterpolatorId,
+  type Kernel,
+  type PaddingMode,
+  type RasterImage,
+} from '@/shared/lib/image'
+
+export interface ConvolveParams {
+  kernel: Kernel
+  channels: FilterChannels
+  mode: PaddingMode
+  levelMax: 127 | 255
+}
 
 export interface ResizeParams {
   width: number
@@ -7,7 +22,8 @@ export interface ResizeParams {
   levelMax: 127 | 255
 }
 
-export type JobOp = { kind: 'resize'; params: ResizeParams }
+export type JobOp =
+  { kind: 'convolve'; params: ConvolveParams } | { kind: 'resize'; params: ResizeParams }
 
 export type WorkerRequest =
   | { type: 'setSource'; key: string; width: number; height: number; buffer: ArrayBuffer }
@@ -18,6 +34,10 @@ export type WorkerResponse =
   | { type: 'error'; jobId: number; message: string }
 
 function runOp(src: RasterImage, op: JobOp): RasterImage {
+  if (op.kind === 'convolve') {
+    const { kernel, channels, mode, levelMax } = op.params
+    return convolve3x3(src, kernel, channels, mode, levelMax)
+  }
   const { width, height, method, levelMax } = op.params
   return resizeImage(src, width, height, method, levelMax)
 }

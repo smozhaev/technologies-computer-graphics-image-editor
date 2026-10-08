@@ -51,8 +51,11 @@ function axisTable(
   return { taps: INTERPOLATORS[method].taps(imageLen, coords), inside, parity }
 }
 
+/** Optional pipeline stages applied to sampled source colours (lab2+). */
 /** Inputs of the expensive resample stage. */
 export interface ResampleStages {
+  /** Filter preview (lab5): replaces the version image as the pipeline source when sizes match. */
+  source?: RasterImage | null
   /** View interpolation (lab4); exact copy is used at 100 % to stay pixel-sharp. */
   interpolation?: InterpolatorId
 }
@@ -91,7 +94,12 @@ export function sampleView(
       layout: version.layout,
     }
   }
-  const img = version.image
+  const img =
+    stages.source &&
+    stages.source.width === version.image.width &&
+    stages.source.height === version.image.height
+      ? stages.source
+      : version.image
   const origin = imageToScreen({ x: 0, y: 0 }, view, vp, img)
   const method: InterpolatorId =
     view.zoom === 1 ? 'nearest' : (stages.interpolation ?? DEFAULT_INTERPOLATOR)

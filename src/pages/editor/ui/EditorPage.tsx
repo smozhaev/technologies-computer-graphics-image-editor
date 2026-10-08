@@ -1,3 +1,4 @@
+import { FilterDialog } from '@/features/apply-filter'
 import { LevelsDialog } from '@/features/adjust-levels'
 import {
   DropOverlay,
@@ -40,6 +41,7 @@ export function EditorPage() {
       <SaveDialog />
       <LevelsDialog />
       <ResizeDialog />
+      <FilterDialog />
     </OpenFileProvider>
   )
 }

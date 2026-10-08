@@ -42,6 +42,7 @@ export function useEditorHotkeys(): void {
     ['mod+S', openSave],
     ['mod+L', () => openDialog('levels')],
     ['mod+alt+I', () => openDialog('resize')],
+    ['mod+shift+F', () => openDialog('filter')],
     [
       'mod+Z',
       () => {

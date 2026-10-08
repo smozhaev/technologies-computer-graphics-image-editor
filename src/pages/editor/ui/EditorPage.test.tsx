@@ -23,7 +23,7 @@ const pick = (file: File) => fireEvent.change(input(), { target: { files: [file]
 describe('shell', () => {
   it('renders menus, tool, panels, empty status', () => {
     renderWithProviders(<EditorPage />)
-    for (const name of ['Файл', 'Изображение'])
+    for (const name of ['Файл', 'Изображение', 'Фильтр'])
       expect(screen.getByRole('button', { name })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Указатель (V)' })).toBeInTheDocument()
     expect(screen.getAllByText('Нет изображения')).toHaveLength(2)
@@ -160,5 +160,17 @@ describe('drop overlay and empty canvas', () => {
     pick(gb7File(3, 2, 0, 'pic.gb7'))
     await waitFor(() => expect(status()).toHaveTextContent('pic.gb7'))
     expect(status()).toHaveTextContent(/%$/)
+  })
+})
+
+describe('toolbar actions', () => {
+  it('filter button opens the convolution dialog', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<EditorPage />)
+    expect(screen.getByRole('button', { name: /Свёртка 3×3/ })).toBeDisabled()
+    pick(gb7File(2, 2))
+    await waitFor(() => expect(editorStore.getState().doc).not.toBeNull())
+    await user.click(screen.getByRole('button', { name: /Свёртка 3×3/ }))
+    expect(editorStore.getState().dialog).toBe('filter')
   })
 })
