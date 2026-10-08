@@ -73,6 +73,22 @@ export function MenuBar() {
           </Menu.Item>
         </Menu.Dropdown>
       </Menu>
+      <Menu position="bottom-start">
+        <Menu.Target>
+          <Button variant="subtle" color="gray">
+            Фильтр
+          </Button>
+        </Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Item
+            disabled={!hasDoc}
+            onClick={() => editorStore.setState((s) => setDialog(s, 'filter'))}
+            rightSection={hint(shortcut('F', true))}
+          >
+            Свёртка 3×3…
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
     </Group>
   )
 }
