@@ -145,4 +145,13 @@ describe('renderView', () => {
     )
     expect([half.width, half.height]).toEqual([2, 2])
   })
+  it('source stage replaces the version image when sizes match', () => {
+    const v = { cssWidth: 1, cssHeight: 1, dpr: 1 }
+    const base = solid(1, 1, [1, 1, 1, 255])
+    const filtered = solid(1, 1, [99, 99, 99, 255])
+    expect(at(renderView(doc(base), view(), v, { source: filtered }), 0, 0)[0]).toBe(99)
+    expect(
+      at(renderView(doc(base), view(), v, { source: solid(2, 1, [5, 5, 5, 255]) }), 0, 0)[0],
+    ).toBe(1)
+  })
 })
