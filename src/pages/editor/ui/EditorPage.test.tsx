@@ -164,13 +164,24 @@ describe('drop overlay and empty canvas', () => {
 })
 
 describe('toolbar actions', () => {
-  it('filter button opens the convolution dialog', async () => {
+  it('filter button opens the dialog; red reset clears the image after confirmation', async () => {
     const user = userEvent.setup()
     renderWithProviders(<EditorPage />)
     expect(screen.getByRole('button', { name: /Свёртка 3×3/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Сбросить изображение' })).toBeDisabled()
     pick(gb7File(2, 2))
     await waitFor(() => expect(editorStore.getState().doc).not.toBeNull())
     await user.click(screen.getByRole('button', { name: /Свёртка 3×3/ }))
     expect(editorStore.getState().dialog).toBe('filter')
+    act(() => editorStore.setState((s) => setDialog(s, null)))
+
+    await user.click(screen.getByRole('button', { name: 'Сбросить изображение' }))
+    await user.click(await screen.findByRole('button', { name: 'Отмена' }))
+    expect(editorStore.getState().doc).not.toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Сбросить изображение' }))
+    await user.click(await screen.findByRole('button', { name: 'Сбросить' }))
+    expect(editorStore.getState().doc).toBeNull()
+    expect(status()).toHaveTextContent('Откройте изображение')
   })
 })
