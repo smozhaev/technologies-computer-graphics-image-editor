@@ -50,12 +50,13 @@ function FilterForm({ version, onClose }: { version: ImageVersion; onClose: () =
   const [preview, setPreviewOn] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const last = useRef<{ key: string; image: RasterImage } | null>(null)
+  // last finished preview; the spinner is derived from it, so a superseded run cannot leave it on
+  const [shown, setShown] = useState<{
+    key: string
+    source: RasterImage
+    image: RasterImage
+  } | null>(null)
   const alive = useRef(true)
-  const previewOn = useRef(preview)
-  useEffect(() => {
-    previewOn.current = preview
-  })
 
   const div = num(divisor, 1)
   const kernelSum = Math.round(weights.reduce<number>((a, w) => a + num(w, 0), 0) * 10000) / 10000
@@ -74,6 +75,8 @@ function FilterForm({ version, onClose }: { version: ImageVersion; onClose: () =
   )
   const key = JSON.stringify(params)
   const divisorError = div === 0 ? 'Делитель не может быть 0' : null
+  const fresh = shown && shown.key === key && shown.source === version.image ? shown : null
+  const previewBusy = preview && !fresh && !error
 
   useEffect(() => {
     alive.current = true
@@ -88,38 +91,31 @@ function FilterForm({ version, onClose }: { version: ImageVersion; onClose: () =
       setPreviewImage(null)
       return
     }
-    if (last.current?.key === key) {
-      setPreviewImage(last.current.image)
+    if (fresh) {
+      setPreviewImage(fresh.image)
       return
     }
     // results of a superseded run (params changed, preview switched off) are ignored
     let cancelled = false
+    const source = version.image
     const t = setTimeout(() => {
-      setBusy(true)
       getRunner()
-        .convolve(version.image, params, 'preview')
+        .convolve(source, params, 'preview')
         .then((img) => {
-          if (!alive.current) return
-          if (cancelled) {
-            if (!previewOn.current) setBusy(false)
-            return
-          }
-          if (!img) return
-          last.current = { key, image: img }
+          if (cancelled || !alive.current || !img) return
+          setShown({ key, source, image: img })
           setPreviewImage(img)
-          setBusy(false)
         })
         .catch((e: unknown) => {
           if (cancelled || !alive.current) return
           setError(e instanceof Error ? e.message : String(e))
-          setBusy(false)
         })
     }, DEBOUNCE_MS)
     return () => {
       cancelled = true
       clearTimeout(t)
     }
-  }, [key, params, preview, version.image])
+  }, [key, params, preview, version.image, fresh])
 
   function choosePreset(id: PresetChoice) {
     setPreset(id)
@@ -145,10 +141,7 @@ function FilterForm({ version, onClose }: { version: ImageVersion; onClose: () =
     if (divisorError) return
     setBusy(true)
     try {
-      const img =
-        last.current?.key === key
-          ? last.current.image
-          : await getRunner().convolve(version.image, params, 'apply')
+      const img = fresh ? fresh.image : await getRunner().convolve(version.image, params, 'apply')
       if (img && alive.current) applyFilterResult(img)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -263,7 +256,7 @@ function FilterForm({ version, onClose }: { version: ImageVersion; onClose: () =
           checked={preview}
           onChange={(e) => setPreviewOn(e.currentTarget.checked)}
         />
-        {busy && <Loader size="xs" aria-label="Вычисление" />}
+        {(busy || previewBusy) && <Loader size="xs" aria-label="Вычисление" />}
       </Group>
       {error && (
         <Text size="xs" c="red">

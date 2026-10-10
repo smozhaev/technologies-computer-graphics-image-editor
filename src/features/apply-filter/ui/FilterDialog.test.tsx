@@ -5,7 +5,7 @@ import { createRaster, type ChannelLayout } from '@/shared/lib/image'
 import { createDocument } from '@/entities/document'
 import { editorStore, resetEditorStore, setDialog, setDocument } from '@/entities/editor'
 import { renderWithProviders } from '@/shared/lib/test'
-import { createInProcessRunner, setRunnerForTests } from '@/shared/lib/worker'
+import { createInProcessRunner, setRunnerForTests, type JobRunner } from '@/shared/lib/worker'
 import { FilterDialog } from './FilterDialog'
 
 function open(layout: ChannelLayout = 'rgb') {
@@ -111,5 +111,34 @@ describe('FilterDialog', () => {
     await user.type(field('Делитель'), '1')
     await user.click(screen.getByRole('button', { name: 'Σ' }))
     expect(field('Делитель')).toHaveValue('16')
+  })
+
+  it('returning to an already previewed kernel mid-computation clears the spinner', async () => {
+    const real = createInProcessRunner()
+    let calls = 0
+    let release: (() => void) | null = null
+    const runner: JobRunner = {
+      convolve: (src, params, lane) =>
+        calls++ === 0
+          ? real.convolve(src, params, lane)
+          : new Promise((resolve) => {
+              release = () => void real.convolve(src, params, lane).then(resolve)
+            }),
+      resize: (src, params) => real.resize(src, params),
+    }
+    setRunnerForTests(runner)
+    const user = userEvent.setup({ pointerEventsCheck: 0 })
+    renderWithProviders(<FilterDialog />)
+    open()
+    await waitFor(() => expect(editorStore.getState().filterPreview).not.toBeNull())
+    await waitFor(() => expect(screen.queryByLabelText('Вычисление')).toBeNull())
+    await user.clear(field('Вес 2.2'))
+    await user.type(field('Вес 2.2'), '2')
+    await waitFor(() => expect(release).not.toBeNull())
+    expect(screen.getByLabelText('Вычисление')).toBeInTheDocument()
+    await user.clear(field('Вес 2.2'))
+    await user.type(field('Вес 2.2'), '1')
+    act(() => release?.())
+    await waitFor(() => expect(screen.queryByLabelText('Вычисление')).toBeNull())
   })
 })
