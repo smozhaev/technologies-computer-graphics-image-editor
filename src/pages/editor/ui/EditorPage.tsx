@@ -7,6 +7,7 @@ import {
   useWindowFileDrop,
 } from '@/features/open-file'
 import { ResizeDialog } from '@/features/resize-image'
+import { usePersistSession } from '@/features/persist-session'
 import { SaveDialog } from '@/features/save-file'
 import { Viewport } from '@/widgets/canvas-viewport'
 import { EditorLayout } from '@/widgets/editor-layout'
@@ -18,6 +19,7 @@ import { useEditorHotkeys } from '../model/useEditorHotkeys'
 
 function EditorShell() {
   useEditorHotkeys()
+  usePersistSession()
   const dragging = useWindowFileDrop(openAndNotify)
   return (
     <>
