@@ -75,6 +75,33 @@ pnpm test
 pnpm build
 ```
 
+## Деплой
+
+### Docker
+
+```bash
+docker compose up --build        # http://localhost:8080
+# или
+docker build -t graybit-studio .
+docker run -p 8080:80 graybit-studio
+```
+
+- Двухэтапная сборка: Node 24 + pnpm собирают статику, nginx её раздаёт (~90 МБ).
+- Порт берётся из переменной `PORT` (по умолчанию 80) — так ожидают Render, Railway, Fly.io.
+- nginx: возврат `index.html` для любых путей, gzip, год кеша для `/assets/*` (имена с хешем), `index.html` без кеша, проверка живости `GET /healthz`.
+- Для размещения в подкаталоге: `docker build --build-arg BASE_PATH=/editor/ .`
+
+### GitHub Actions
+
+| Workflow    | Когда                               | Что делает                                                      |
+| ----------- | ----------------------------------- | --------------------------------------------------------------- |
+| `ci.yml`    | push в `main`/`lab*`, теги `v*`, PR | lint, typecheck, test, build; для `main` и тегов — образ в GHCR |
+| `pages.yml` | push в `main`, вручную              | сборка с `BASE_PATH=/<repo>/` и публикация на GitHub Pages      |
+
+- Образ: `ghcr.io/<владелец>/<репозиторий>:latest`, а также `:sha-<коммит>` и `:<версия>` для тегов `v1.2.3`.
+- GitHub Pages: один раз включить «Settings → Pages → Source: GitHub Actions».
+- Хостинг с Docker (Render, Railway, VPS): указать образ из GHCR или подключить репозиторий — `Dockerfile` в корне.
+
 ## Стек
 
 TypeScript (strict), React 19, Vite, Mantine 9, Zustand, Vitest 4 + Testing Library, ESLint, Prettier, Steiger, pnpm.
