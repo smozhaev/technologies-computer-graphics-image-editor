@@ -22,17 +22,24 @@ src/
   pages/      editor — страница редактора: собирает виджеты, диалоги, горячие клавиши
   widgets/    menu-bar · toolbar · canvas-viewport · side-panel · status-bar · editor-layout
   features/   open-file · save-file · toggle-channels · pick-color · adjust-levels ·
-              zoom-view · resize-image · apply-filter · undo-version
+              zoom-view · resize-image · apply-filter · undo-version · persist-session
   entities/   document (версии, отмена, текст статуса) · editor (состояние редактора на Zustand, вид)
   shared/     lib/image — все алгоритмы над пикселями (без DOM и React)
               lib/io — декодирование/кодирование браузером, скачивание
-              lib/worker — Web Worker и очередь задач · ui — NativeDialog, CanvasView
+              lib/worker — Web Worker и очередь задач · lib/storage — IndexedDB · ui — NativeDialog, CanvasView
               config — тема · lib/test — утилиты тестов
 ```
 
 - Слой импортирует только нижележащие слои; срезы одного слоя друг друга не импортируют.
 - Каждый срез и сегмент `shared` открывает публичный API через `index.ts`; импорт в обход него запрещён.
 - Импорты через алиас `@/`. Правила проверяет [Steiger](https://github.com/feature-sliced/steiger) в составе `pnpm lint`.
+
+## Сохранение между перезагрузками
+
+- Открытое изображение хранится в IndexedDB браузера: исходное и текущее состояние, данные о файле и масштаб. Запись идёт через ~0,5 с после изменения; после перезагрузки страницы изображение восстанавливается.
+- «Файл → Вернуть исходное» откатывает к изображению, каким его открыли (отменяется `Ctrl/Cmd+Z`); работает и после перезагрузки.
+- Красная кнопка «Сбросить изображение» на панели инструментов (после подтверждения) и «Файл → Закрыть» очищают холст и удаляют сохранённую копию — после перезагрузки откроется пустой холст.
+- История отмены после перезагрузки начинается заново: хранить все версии (до ~512 МБ) на каждое действие слишком дорого.
 
 ## Горячие клавиши
 
